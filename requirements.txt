@@ -1,0 +1,9 @@
+fastembed
+gradio
+httpx
+langchain-text-splitters
+modelscope
+openai
+pydantic
+qdrant-client
+sentence-transformers

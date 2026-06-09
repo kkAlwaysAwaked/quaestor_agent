@@ -1,0 +1,69 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging and build output
+build/
+dist/
+*.egg-info/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+credentials.json
+secrets.json
+
+# Jupyter
+.ipynb_checkpoints/
+
+# RAG/vector database runtime data
+RAG_for_FunctionCalling/.git_backup/
+qdrant_db/.lock
+models/
+chroma/
+chromadb/
+vectorstore/
+vectorstores/
+faiss_index/
+indexes/
+storage/
+data/
+uploads/
+outputs/
+logs/
+*.sqlite
+*.sqlite3
+*.db
+
+# Model and embedding caches
+.cache/
+cache/
+huggingface/
+modelscope/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+
+# Logs
+*.log
+*.tmp
+*.temp
