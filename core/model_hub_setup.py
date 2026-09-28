@@ -7,12 +7,13 @@
 """
 import os
 from pathlib import Path
+from .config import model_cache_dir, setting
 
 # fastembed / transformers 等仍通过 huggingface_hub 拉取时使用的镜像
 if not os.environ.get("HF_ENDPOINT"):
-    os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+    os.environ["HF_ENDPOINT"] = setting("HF_ENDPOINT", "https://hf-mirror.com") or "https://hf-mirror.com"
 
-MODELS_DIR = Path(__file__).resolve().parent / "models"
+MODELS_DIR = model_cache_dir()
 
 
 def ensure_model_from_modelscope(model_id: str, local_dir: Path | None = None) -> str:

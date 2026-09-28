@@ -13,8 +13,8 @@ Agent 自动化评测脚本。
   - RAG召回的父文档id
 
 用法：
-  .venv\\Scripts\\python.exe run_agent_eval.py
-  .venv\\Scripts\\python.exe run_agent_eval.py --input data/eval/test_cases.example.jsonl --output data/eval/results.jsonl
+  .venv\\Scripts\\python.exe -m evaluation.run_agent_eval
+  .venv\\Scripts\\python.exe -m evaluation.run_agent_eval --input data/eval/test_cases.example.jsonl --output data/eval/results.jsonl
 """
 from __future__ import annotations
 
@@ -33,9 +33,9 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
-from agent_engine import run_agent_async
+from agent.engine import run_agent_async
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT = PROJECT_ROOT / "data" / "eval" / "test_cases.example.jsonl"
 DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "eval" / "results.jsonl"
 SYSTEM_PROMPT = "你是一个基于内部知识库回答问题的 RAG Agent。需要事实依据时调用 RAG 工具；整段对话只允许调用一次 RAG，请在 query 中尽量覆盖问题要点，不要分多次检索。"
@@ -54,7 +54,7 @@ def parse_sse_data(chunk: str) -> str:
     for line in chunk.splitlines():
         if line.startswith("data: "):
             lines.append(line.removeprefix("data: "))
-    return "".join(lines)
+    return "\n".join(lines)
 
 
 def _normalize_field(value: Any) -> str:
@@ -196,7 +196,7 @@ async def run_single_question(
         if not text:
             continue
 
-        display = text.replace("<br>", "\n")
+        display = text
 
         if "思考完毕，开始输出最终答案" in text:
             in_final_answer = True

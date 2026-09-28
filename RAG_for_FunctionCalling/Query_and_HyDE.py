@@ -1,9 +1,7 @@
 # 实现了 Rewrite 和 HyDE 逻辑
 import httpx
 
-from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL
-
-DEEPSEEK_API_URL = f"{DEEPSEEK_BASE_URL.rstrip('/')}/chat/completions"
+from core.config import load_model_settings
 
 REWRITE_SYSTEM_PROMPT = """你是稀疏检索关键词提取器。
 根据对话历史和当前检索意图，输出用于 SPLADE 稀疏检索的关键词。
@@ -80,13 +78,14 @@ def resolve_query_inputs(
 
 async def rewrite_query(chat_history: list, latest_query: str) -> str | None:
     """将检索意图改写为稀疏检索关键词（供 SPLADE 路使用）。"""
+    model_settings = load_model_settings()
     history_str = "\n".join(
         f"{msg['role']}: {msg['content']}" for msg in chat_history
     ) or "（无）"
     user_content = f"历史对话：\n{history_str}\n\n当前检索意图：{latest_query}"
 
     headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Authorization": f"Bearer {model_settings.api_key}",
         "Content-Type": "application/json",
     }
     payload = {
@@ -101,7 +100,7 @@ async def rewrite_query(chat_history: list, latest_query: str) -> str | None:
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
-                DEEPSEEK_API_URL,
+                f"{model_settings.base_url.rstrip('/')}/chat/completions",
                 headers=headers,
                 json=payload,
                 timeout=10.0,
@@ -130,8 +129,9 @@ def truncate_hyde_document(text: str, max_chars: int = HYDE_MAX_CHARS) -> str:
 
 async def generate_hyde_document(question: str) -> str:
     """生成假设性文档段落（供 Dense 路使用）。"""
+    model_settings = load_model_settings()
     headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Authorization": f"Bearer {model_settings.api_key}",
         "Content-Type": "application/json",
     }
     payload = {
@@ -147,7 +147,7 @@ async def generate_hyde_document(question: str) -> str:
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
-                DEEPSEEK_API_URL,
+                f"{model_settings.base_url.rstrip('/')}/chat/completions",
                 headers=headers,
                 json=payload,
                 timeout=15.0,

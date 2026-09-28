@@ -1,7 +1,6 @@
-import model_hub_setup  # noqa: F401 — 配置模型下载源
+from core import model_hub_setup  # noqa: F401 — 配置模型下载源
 
 import json
-import asyncio
 import inspect
 import sys
 
@@ -10,7 +9,7 @@ from openai import AsyncOpenAI
 
 from Tools_Registry.tool_registry import TOOL_REGISTRY
 from Tools_Registry import my_tools  # noqa: F401 — 注册 RAG 工具
-from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL
+from core.config import load_model_settings
 
 MODEL_NAME = "deepseek-v4-flash"
 RAG_TOOL_NAME = "RAG"
@@ -144,9 +143,10 @@ async def run_agent_async(
     :param http_client: HTTP 客户端
     :param max_steps: 最大迭代步数
     """
+    model_settings = load_model_settings()
     client = AsyncOpenAI(
-        api_key=DEEPSEEK_API_KEY,
-        base_url=DEEPSEEK_BASE_URL,
+        api_key=model_settings.api_key,
+        base_url=model_settings.base_url,
         http_client=http_client,
     )
     available_tools = get_available_tools()
@@ -215,15 +215,11 @@ async def run_agent_async(
             continue
 
         print("\n=== Agent 最终回答 ===")
-        yield "data: ✅ [系统] 思考完毕，开始输出最终答案：\n<br><br>\n\n"
+        yield "data: ✅ [系统] 思考完毕，开始输出最终答案：\n\n"
 
-        final_text = response_message.content
-        for char in final_text:
-            if char == "\n":
-                yield "data: <br>\n\n"
-            else:
-                yield f"data: {char}\n\n"
-            await asyncio.sleep(0.01)
+        final_text = response_message.content or ""
+        if final_text:
+            yield "".join(f"data: {line}\n" for line in final_text.split("\n")) + "\n"
 
         yield "data: [DONE]\n\n"
         return

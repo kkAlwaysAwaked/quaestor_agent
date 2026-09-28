@@ -1,4 +1,4 @@
-import model_hub_setup  # noqa: F401 — 配置 HF 镜像后再加载 fastembed
+from core import model_hub_setup  # noqa: F401 — 配置 HF 镜像后再加载 fastembed
 
 from qdrant_client import models
 from fastembed import SparseTextEmbedding

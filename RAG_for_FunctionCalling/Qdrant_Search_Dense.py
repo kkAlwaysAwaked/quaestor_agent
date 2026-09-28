@@ -1,5 +1,5 @@
 # 用 HyDE 结果进行 密集/向量(dense) 检索
-import model_hub_setup  # noqa: F401 — 配置 HF 镜像后再加载 fastembed
+from core import model_hub_setup  # noqa: F401 — 配置 HF 镜像后再加载 fastembed
 
 from fastembed import TextEmbedding
 

@@ -33,8 +33,8 @@ secrets.json
 
 # RAG/vector database runtime data
 RAG_for_FunctionCalling/.git_backup/
-qdrant_db/.lock
-models/
+qdrant_db/
+/models/
 chroma/
 chromadb/
 vectorstore/

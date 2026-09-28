@@ -4,7 +4,6 @@ import traceback
 
 from .tool_registry import register_tool
 from RAG_for_FunctionCalling.Query_and_HyDE import extract_dialog_messages
-from RAG_for_FunctionCalling.Search_Internal_Docs import search_internal_docs
 
 
 def simple_context_trimmer(messages: list, max_chars: int = 6000) -> list:
@@ -31,6 +30,8 @@ async def RAG(query: str, agent_messages: list = None) -> str:
         query (str): 根据用户提问和前文语境，提取出的独立、完整的搜索关键词。
                      请消除指代不明（例如将「它怎么用」改写为「XX 系统功能使用说明」）。
     """
+    from RAG_for_FunctionCalling.Search_Internal_Docs import search_internal_docs
+
     print(f"\n[Tool Calling] 正在触发 RAG，核心检索词: '{query}'")
 
     raw_messages = agent_messages or [{"role": "user", "content": query}]

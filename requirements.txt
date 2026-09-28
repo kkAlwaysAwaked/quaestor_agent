@@ -1,9 +1,14 @@
 fastembed
-gradio
 httpx
 langchain-text-splitters
 modelscope
 openai
 pydantic
-qdrant-client
+qdrant-client==1.15.1
 sentence-transformers
+aio-pika==9.5.7
+redis==6.4.0
+PyMySQL==1.1.2
+SQLAlchemy==2.0.48
+aiomysql==0.3.2
+alembic==1.20.0

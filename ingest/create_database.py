@@ -1,6 +1,6 @@
 # 对文件进行切分 + 入库
 # 首次运行会拉取 embedding 模型；国内网络通过 model_hub_setup 配置镜像源
-import model_hub_setup  # noqa: F401
+from core import model_hub_setup  # noqa: F401
 
 import os
 import sys
@@ -35,7 +35,7 @@ PARENT_CHUNK_OVERLAP = 200
 # 一、全局初始化逻辑
 print("初始化模型和数据库...")
 
-DB_PATH = r"D:\advanced_RAG\qdrant_db"
+DB_PATH = str(Path(__file__).resolve().parents[1] / "qdrant_db")
 DOCSTORE_PATH = os.path.join(DB_PATH, "docstore.json")
 COLLECTION_NAME = "hybrid_collection"
 # 确保数据库主目录存在

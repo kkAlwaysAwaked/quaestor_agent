@@ -1,4 +1,4 @@
-import model_hub_setup  # noqa: F401 — 必须在第三方模型库之前配置下载源
+from core import model_hub_setup  # noqa: F401 — 必须在第三方模型库之前配置下载源
 
 from sentence_transformers import CrossEncoder
 
