@@ -1,0 +1,16 @@
+{
+  "questions": [
+    {
+      "question": "根据员工手册，我每年有多少天年假？",
+      "search_query": "员工手册 年假 天数",
+      "expected_source": "employee_handbook.md",
+      "expected_content": "正式员工每年享有十天带薪年假"
+    },
+    {
+      "question": "年假要如何申请？",
+      "search_query": "员工手册 请假流程 申请 审批",
+      "expected_source": "employee_handbook.md",
+      "expected_content": "员工应提前在内部系统提交休假申请"
+    }
+  ]
+}

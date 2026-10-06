@@ -32,9 +32,9 @@ secrets.json
 .ipynb_checkpoints/
 
 # RAG/vector database runtime data
-RAG_for_FunctionCalling/.git_backup/
-qdrant_db/.lock
-models/
+services/retrieval/.git_backup/
+qdrant_db/
+/models/
 chroma/
 chromadb/
 vectorstore/
