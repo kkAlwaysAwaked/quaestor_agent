@@ -1,2 +1,6 @@
 # 运行数据库操作的轻量测试时使用；正式 MySQL 服务不依赖它。
 aiosqlite==0.22.0
+# Redis 替身实际执行 Lua，用于验证 attempt 隔离、事件去重和 TTL。
+fakeredis[lua]==2.39.0
+lupa==2.8
+sortedcontainers==2.4.0

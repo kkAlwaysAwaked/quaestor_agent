@@ -1,15 +1,30 @@
 """用户、会话、消息与聊天任务的持久化结构。"""
+# 回答：一条聊天任务需要保存什么？
 
 from __future__ import annotations
 
 from datetime import datetime
 
+# SQLAlchemy：用 Python 类描述 MySQL 表，
+# 以及用 Python 代码构造查询、管理连接和事务。
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from infra.mysql.base import Base, IdMixin, TimestampMixin, utc_now
 from infra.mysql.status import TaskStatus
 
+# User 继承这三个类：IdMixin 提供 id；
+# TimestampMixin 提供 created_at 和 updated_at；
+# Base 让 SQLAlchemy 把 User 识别为数据库模型。
+
+# CREATE TABLE users (
+#     id VARCHAR(36) PRIMARY KEY,
+#     email VARCHAR(254) NOT NULL,
+#     password_hash VARCHAR(255) NOT NULL,
+#     created_at DATETIME NOT NULL,
+#     updated_at DATETIME NOT NULL,
+#     CONSTRAINT uq_users_email UNIQUE (email)
+# );
 
 class User(IdMixin, TimestampMixin, Base):
     __tablename__ = "users"

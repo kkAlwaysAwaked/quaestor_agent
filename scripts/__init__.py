@@ -1,1 +1,1 @@
-"""Command-line entry points for project setup and diagnostics."""
+"""可直接运行的维护、检查和评测入口"""

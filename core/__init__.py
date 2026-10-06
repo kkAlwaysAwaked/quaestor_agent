@@ -1,1 +1,1 @@
-"""Shared configuration and model setup."""
+"""跨模块共享的配置与基础定义。"""

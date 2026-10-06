@@ -33,6 +33,7 @@ class DocumentVersion(IdMixin, TimestampMixin, Base):
 
     document_id: Mapped[str] = mapped_column(String(36), ForeignKey("documents.id"), nullable=False)
     file_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    storage_key: Mapped[str] = mapped_column(String(512), nullable=False)
     processing_config: Mapped[dict[str, Any]] = mapped_column(JSON(), nullable=False)
     status: Mapped[str] = mapped_column(
         String(16), default=DocumentVersionStatus.PROCESSING.value, nullable=False

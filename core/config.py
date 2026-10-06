@@ -76,6 +76,39 @@ class InfrastructureSettings:
     qdrant_api_key: str
 
 
+@dataclass(frozen=True)
+class RabbitRuntimeSettings:
+    host: str
+    port: int
+    user: str
+    password: str
+
+
+@dataclass(frozen=True)
+class QdrantRuntimeSettings:
+    url: str
+    api_key: str
+
+
+# 作用：仅加载 RabbitMQ 消费者和发布者实际需要的连接配置。
+def load_rabbit_runtime_settings() -> RabbitRuntimeSettings:
+    return RabbitRuntimeSettings(
+        host=setting("RABBITMQ_HOST", "127.0.0.1") or "127.0.0.1",
+        port=_port("RABBITMQ_PORT", 5673),
+        user=_required("RABBITMQ_USER"),
+        password=_required("RABBITMQ_PASSWORD"),
+    )
+
+
+# 作用：仅加载 Qdrant Server 客户端需要的地址与 API Key。
+def load_qdrant_runtime_settings() -> QdrantRuntimeSettings:
+    host = setting("QDRANT_HOST", "127.0.0.1") or "127.0.0.1"
+    port = _port("QDRANT_PORT", 6333)
+    return QdrantRuntimeSettings(
+        url=f"http://{host}:{port}", api_key=_required("QDRANT_API_KEY")
+    )
+
+
 # 数据库运行时配置独立加载，避免使用 MySQL 时强制要求其他中间件密钥。
 @dataclass(frozen=True)
 class DatabaseSettings:
@@ -159,6 +192,126 @@ def load_infrastructure_settings() -> InfrastructureSettings:
 class ModelSettings:
     api_key: str
     base_url: str
+
+
+@dataclass(frozen=True)
+class ServiceTokenSettings:
+    service_secret: str
+    token_ttl_seconds: int = 120
+
+
+@dataclass(frozen=True)
+class RetrievalSettings(ServiceTokenSettings):
+    request_timeout_seconds: int = 60
+    run_lease_seconds: int = 90
+    max_inflight: int = 8
+    pipeline_concurrency: int = 2
+    query_mode: str = "llm"
+    qdrant_timeout_seconds: int = 10
+
+
+@dataclass(frozen=True)
+class RedisRuntimeSettings:
+    host: str
+    port: int
+    password: str
+
+
+@dataclass(frozen=True)
+class AgentSettings:
+    model_name: str = "deepseek-v4-flash"
+    thinking_mode: str = "disabled"
+    concurrency: int = 2
+    prefetch_count: int = 2
+    max_attempts: int = 3
+    max_steps: int = 5
+    model_max_tokens: int = 4096
+    model_timeout_seconds: int = 60
+    generation_timeout_seconds: int = 180
+    retrieval_url: str = "http://127.0.0.1:8001"
+    retrieval_timeout_seconds: int = 70
+    max_output_chars: int = 20000
+    active_stream_ttl_seconds: int = 3600
+    terminal_stream_ttl_seconds: int = 86400
+    io_timeout_seconds: int = 5
+    database_timeout_seconds: int = 10
+    shutdown_grace_seconds: int = 20
+
+
+# 作用：独立读取 Redis 运行时配置，避免 Agent 被迫提供 Qdrant 连接参数。
+def load_redis_runtime_settings() -> RedisRuntimeSettings:
+    return RedisRuntimeSettings(
+        host=setting("REDIS_HOST", "127.0.0.1") or "127.0.0.1",
+        port=_port("REDIS_PORT", 6379), password=_required("REDIS_PASSWORD"),
+    )
+
+
+# 作用：读取 Agent 的模型、消费并发、生成时限和事件保留配置，并约束恢复时间窗口。
+def load_agent_settings() -> AgentSettings:
+    concurrency = _nonnegative_int("AGENT_CONCURRENCY", 2, minimum=1)
+    prefetch = _nonnegative_int("AGENT_PREFETCH_COUNT", concurrency, minimum=1)
+    if concurrency > 2 or prefetch > concurrency:
+        raise ConfigError("first release requires AGENT_CONCURRENCY <= 2 and PREFETCH_COUNT <= concurrency")
+    thinking = setting("AGENT_THINKING_MODE", "disabled")
+    if thinking not in ("enabled", "disabled"):
+        raise ConfigError("AGENT_THINKING_MODE must be enabled or disabled")
+    duration = _nonnegative_int("AGENT_GENERATION_TIMEOUT_SECONDS", 180, minimum=1)
+    if duration > 900:
+        raise ConfigError("AGENT_GENERATION_TIMEOUT_SECONDS must be <= 900 to leave room before RabbitMQ acknowledgement timeout")
+    active_ttl = _nonnegative_int("CHAT_ACTIVE_TTL_SECONDS", 3600, minimum=1)
+    lease = load_task_lease_settings()
+    if lease.lease_seconds < 30:
+        raise ConfigError("TASK_LEASE_SECONDS must be at least 30 for Agent heartbeat and Outbox publishing")
+    if active_ttl < duration + lease.lease_seconds + 360:
+        raise ConfigError("CHAT_ACTIVE_TTL_SECONDS must cover generation, lease recovery and retry delay")
+    retrieval_url = setting("RETRIEVAL_BASE_URL", "http://127.0.0.1:8001") or ""
+    if not retrieval_url.startswith(("http://", "https://")):
+        raise ConfigError("RETRIEVAL_BASE_URL must be an HTTP URL")
+    return AgentSettings(
+        model_name=setting("AGENT_MODEL_NAME", "deepseek-v4-flash") or "deepseek-v4-flash",
+        thinking_mode=thinking, concurrency=concurrency, prefetch_count=prefetch,
+        max_attempts=_nonnegative_int("AGENT_MAX_ATTEMPTS", 3, minimum=1),
+        max_steps=_nonnegative_int("AGENT_MAX_STEPS", 5, minimum=1),
+        model_max_tokens=_nonnegative_int("AGENT_MODEL_MAX_TOKENS", 4096, minimum=1),
+        model_timeout_seconds=_nonnegative_int("AGENT_MODEL_TIMEOUT_SECONDS", 60, minimum=1),
+        generation_timeout_seconds=duration, retrieval_url=retrieval_url.rstrip("/"),
+        retrieval_timeout_seconds=_nonnegative_int("AGENT_RETRIEVAL_TIMEOUT_SECONDS", 70, minimum=1),
+        max_output_chars=_nonnegative_int("AGENT_MAX_OUTPUT_CHARS", 20000, minimum=1),
+        active_stream_ttl_seconds=active_ttl,
+        terminal_stream_ttl_seconds=_nonnegative_int("CHAT_TERMINAL_TTL_SECONDS", 86400, minimum=1),
+        shutdown_grace_seconds=_nonnegative_int("AGENT_SHUTDOWN_GRACE_SECONDS", 20, minimum=1),
+    )
+
+
+# 作用：加载检索服务的认证、超时和并发配置，并确保租约覆盖请求时限。
+def load_retrieval_settings() -> RetrievalSettings:
+    credentials = load_retrieval_token_settings()
+    timeout = _nonnegative_int("RETRIEVAL_TIMEOUT_SECONDS", 60, minimum=1)
+    lease = _nonnegative_int("RETRIEVAL_RUN_LEASE_SECONDS", 90, minimum=1)
+    if lease < timeout + 10:
+        raise ConfigError("RETRIEVAL_RUN_LEASE_SECONDS must exceed timeout by at least 10 seconds")
+    mode = setting("RETRIEVAL_QUERY_MODE", "llm")
+    if mode not in ("llm", "fixed"):
+        raise ConfigError("RETRIEVAL_QUERY_MODE must be llm or fixed")
+    return RetrievalSettings(
+        service_secret=credentials.service_secret, token_ttl_seconds=credentials.token_ttl_seconds,
+        request_timeout_seconds=timeout, run_lease_seconds=lease,
+        max_inflight=_nonnegative_int("RETRIEVAL_MAX_INFLIGHT", 8, minimum=1),
+        pipeline_concurrency=_nonnegative_int("RETRIEVAL_PIPELINE_CONCURRENCY", 2, minimum=1),
+        query_mode=mode,
+        qdrant_timeout_seconds=_nonnegative_int("RETRIEVAL_QDRANT_TIMEOUT_SECONDS", 10, minimum=1),
+    )
+
+
+# 作用：只读取 Agent 与 Retrieval 共用的内部签名凭据，不校验检索服务自身的运行参数。
+def load_retrieval_token_settings() -> ServiceTokenSettings:
+    secret = _required("RETRIEVAL_SERVICE_SECRET")
+    if len(secret.encode("utf-8")) < 32 or secret.startswith("replace_"):
+        raise ConfigError("RETRIEVAL_SERVICE_SECRET must be a dedicated secret of at least 32 bytes")
+    return ServiceTokenSettings(
+        service_secret=secret,
+        token_ttl_seconds=_nonnegative_int("RETRIEVAL_TOKEN_TTL_SECONDS", 120, minimum=1),
+    )
 
 
 # 作用：加载 Agent 与检索服务使用的模型 API 配置。

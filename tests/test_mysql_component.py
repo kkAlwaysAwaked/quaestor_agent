@@ -20,6 +20,7 @@ from infra.mysql.status import OutboxDestination, TaskStatus
 
 class MysqlComponentTests(unittest.IsolatedAsyncioTestCase):
     # 作用：为每个测试创建独立的内存数据库及异步会话工厂。
+    # 创建内存 SQLite 数据库，建表，创建 session 工厂，在一个事务里插入四条记录：users, conversations, messages, chat_requests
     async def asyncSetUp(self) -> None:
         self.engine = create_async_engine("sqlite+aiosqlite:///:memory:")
         async with self.engine.begin() as connection:
@@ -75,6 +76,7 @@ class MysqlComponentTests(unittest.IsolatedAsyncioTestCase):
     # 作用：验证用户范围内的提交幂等键由数据库唯一约束保护。
     async def test_chat_idempotency_unique_constraint(self) -> None:
         async with self.sessions() as session:
+            # 要求数据库抛出 IntegrityError 异常，因为 idempotency_key 是唯一约束
             with self.assertRaises(IntegrityError):
                 async with session.begin():
                     session.add(ChatRequest(

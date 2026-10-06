@@ -8,6 +8,7 @@ DEAD_EXCHANGE = "app.dead"
 CHAT_QUEUE = "chat.requests"
 INGEST_QUEUE = "ingest.jobs"
 CHAT_DEAD_QUEUE = "chat.requests.dead"
+CHAT_STREAM_ROUTE = "chat.events"
 INGEST_DEAD_QUEUE = "ingest.jobs.dead"
 
 COLLECTION = "hybrid_collection"

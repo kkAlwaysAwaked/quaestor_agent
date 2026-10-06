@@ -20,14 +20,24 @@ async def claim_due_events(
     lease_seconds: int,
     limit: int,
     now: datetime | None = None,
+    routing_key: str | None = None,
+    destination: str | None = None,
+    aggregate_id: str | None = None,
 ) -> list[OutboxEvent]:
     if lease_seconds <= 0 or limit <= 0:
         raise ValueError("lease_seconds and limit must be positive")
     current = now or utc_now()
+    filters = [OutboxEvent.available_at <= current]
+    if routing_key is not None:
+        filters.append(OutboxEvent.routing_key == routing_key)
+    if destination is not None:
+        filters.append(OutboxEvent.destination == destination)
+    if aggregate_id is not None:
+        filters.append(OutboxEvent.aggregate_id == aggregate_id)
     result = await session.execute(
         select(OutboxEvent)
         .where(
-            OutboxEvent.available_at <= current,
+            *filters,
             or_(
                 OutboxEvent.status == OutboxStatus.PENDING.value,
                 and_(
