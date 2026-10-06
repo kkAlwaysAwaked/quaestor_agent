@@ -1,4 +1,4 @@
-# Agentic RAG
+# quaestor_agent
 
 项目正在按 [实现步骤](docs/实现步骤.md) 重构。基础设施的启动与检查命令见 [部署说明](deploy/README.md)，第四阶段入库数据流见 [入库说明](docs/04-入库.md)，第五阶段 HTTP 检索的阅读顺序、授权与验收见 [Retrieval 说明](docs/05-Retrieval.md)，第六阶段消费、真实流式生成与任务恢复见 [Agent Worker 说明](docs/06-Agent.md)。网关和浏览器 SSE 接入在第七、八阶段实现。
 
